@@ -1,0 +1,43 @@
+# Local environments and caches
+.venv/
+.agents/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build and packaging outputs
+build/
+dist/
+*.egg-info/
+skills-lock.json
+plans/
+
+# Local transcription data
+outputs/
+*.aac
+*.aiff
+*.avi
+*.flac
+*.flv
+*.m4a
+*.m4v
+*.mkv
+*.mov
+*.mp3
+*.mp4
+*.ogg
+*.opus
+*.tsv
+*.vtt
+*.wav
+*.wma
+
+# Local/generated text exports from media
+audio.*
+signal-*
+
+# OS/editor noise
+.DS_Store
+*.swp

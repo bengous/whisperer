@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whisperer — local transcription</title>
+<style>
+  :root {
+    --bg: #0e0f12;
+    --bg-elev: #16181d;
+    --bg-elev-2: #1c1f26;
+    --border: #262a33;
+    --border-strong: #343a45;
+    --fg: #e7e9ee;
+    --fg-muted: #9aa0ab;
+    --fg-faint: #6b7280;
+    --accent: #5eb3d6;
+    --accent-strong: #7cc7e3;
+    --accent-contrast: #06181f;
+    --success: #6fcf97;
+    --danger: #e07a7a;
+    --danger-bg: #241719;
+    --danger-border: #4d2b2e;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.28);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    background-image:
+      radial-gradient(1100px 520px at 50% -8%, rgba(94, 179, 214, 0.10), transparent 70%);
+    background-repeat: no-repeat;
+    color: var(--fg);
+    min-height: 100vh;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: clamp(1rem, 4vw, 3rem) 1rem;
+  }
+
+  main { width: min(100%, 760px); margin: 0 auto; }
+
+  /* Header */
+  .masthead { margin-bottom: 1.75rem; }
+  .brand { display: flex; align-items: center; gap: 0.65rem; }
+  .brand-mark {
+    display: grid; place-items: center;
+    width: 2.25rem; height: 2.25rem;
+    border-radius: 10px;
+    background: linear-gradient(160deg, var(--accent-strong), var(--accent));
+    color: var(--accent-contrast);
+    flex: none;
+  }
+  .brand h1 { font-size: 1.4rem; font-weight: 650; letter-spacing: -0.01em; }
+  .tagline { color: var(--fg-muted); font-size: 0.92rem; margin-top: 0.55rem; }
+  .privacy {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    margin-top: 0.85rem; padding: 0.35rem 0.7rem;
+    font-size: 0.8rem; color: var(--accent-strong);
+    background: rgba(94, 179, 214, 0.08);
+    border: 1px solid rgba(94, 179, 214, 0.22);
+    border-radius: 999px;
+  }
+  .privacy svg { flex: none; }
+
+  /* Card */
+  .card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: clamp(1.1rem, 3vw, 1.6rem);
+  }
+
+  form { display: grid; gap: 1.35rem; }
+
+  /* Dropzone */
+  .dropzone {
+    display: grid;
+    place-items: center;
+    gap: 0.5rem;
+    text-align: center;
+    padding: 2.1rem 1.25rem;
+    border: 1.5px dashed var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--bg-elev-2);
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease, transform 0.05s ease;
+  }
+  .dropzone:hover { border-color: var(--accent); }
+  .dropzone.dragover {
+    border-color: var(--accent);
+    background: rgba(94, 179, 214, 0.07);
+  }
+  .dropzone:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(94, 179, 214, 0.25);
+  }
+  .dropzone .dz-icon { color: var(--accent); }
+  .dropzone .dz-title { font-size: 0.98rem; font-weight: 550; color: var(--fg); }
+  .dropzone .dz-title b { color: var(--accent-strong); font-weight: 600; }
+  .dropzone .dz-hint { font-size: 0.8rem; color: var(--fg-faint); }
+  .file-input {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px; border: 0;
+    clip: rect(0 0 0 0); clip-path: inset(50%);
+    overflow: hidden; white-space: nowrap;
+  }
+  .file-chip {
+    display: none;
+    align-items: center; gap: 0.65rem;
+    margin-top: 0.65rem; padding: 0.55rem 0.75rem;
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); text-align: left;
+    max-width: 100%;
+  }
+  .file-chip.show { display: inline-flex; }
+  .file-chip .fc-icon { color: var(--accent); flex: none; }
+  .file-chip .fc-body { min-width: 0; }
+  .file-chip .fc-name {
+    font-family: var(--font-mono); font-size: 0.82rem; color: var(--fg);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .file-chip .fc-size { font-size: 0.74rem; color: var(--fg-faint); }
+  .file-chip .fc-remove {
+    flex: none; display: grid; place-items: center;
+    width: 1.6rem; height: 1.6rem; padding: 0;
+    background: transparent; border: 0; border-radius: 6px;
+    color: var(--fg-muted); cursor: pointer; font-size: 1.1rem; line-height: 1;
+  }
+  .file-chip .fc-remove:hover { background: var(--bg-elev-2); color: var(--fg); }
+
+  /* Options grid */
+  .options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+  .field { display: grid; gap: 0.35rem; min-width: 0; }
+  .field label { font-size: 0.82rem; font-weight: 550; color: var(--fg); }
+  .field .help { font-size: 0.74rem; color: var(--fg-faint); }
+  select {
+    width: 100%;
+    padding: 0.6rem 2.2rem 0.6rem 0.75rem;
+    background-color: var(--bg-elev-2);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa0ab' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--fg);
+    font-size: 0.92rem; font-family: inherit;
+    appearance: none; -webkit-appearance: none;
+    cursor: pointer;
+  }
+  select:hover { border-color: var(--border-strong); }
+  select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(94, 179, 214, 0.22); }
+
+  /* Actions */
+  .actions { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    min-height: 2.7rem; padding: 0.65rem 1.2rem;
+    border: 1px solid transparent; border-radius: var(--radius-sm);
+    font-size: 0.92rem; font-weight: 600; font-family: inherit;
+    cursor: pointer; text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+  }
+  .btn-primary { flex: 1 1 auto; background: var(--accent); color: var(--accent-contrast); }
+  .btn-primary:hover { background: var(--accent-strong); }
+  .btn-ghost { background: transparent; color: var(--fg-muted); border-color: var(--border); }
+  .btn-ghost:hover { color: var(--fg); border-color: var(--border-strong); }
+  .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(94, 179, 214, 0.3); }
+  .btn:disabled { opacity: 0.55; cursor: wait; }
+
+  /* Spinner / status */
+  .status {
+    display: none;
+    align-items: center; gap: 0.6rem;
+    color: var(--fg-muted); font-size: 0.86rem;
+  }
+  .status.show { display: flex; }
+  .spinner {
+    width: 1.05rem; height: 1.05rem; flex: none;
+    border: 2px solid var(--border-strong);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Alerts */
+  .alert {
+    display: flex; gap: 0.7rem; align-items: flex-start;
+    margin-top: 1.25rem; padding: 0.9rem 1rem;
+    background: var(--danger-bg); border: 1px solid var(--danger-border);
+    border-radius: var(--radius-sm); color: #f2c2c2; font-size: 0.9rem;
+  }
+  .alert svg { flex: none; color: var(--danger); margin-top: 0.05rem; }
+
+  /* Result */
+  .result {
+    margin-top: 1.5rem;
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    overflow: hidden;
+    animation: rise 0.35s ease both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .result-head {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem;
+    padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+  }
+  .result-head h2 {
+    font-size: 1rem; font-weight: 600; margin-right: auto;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .result-head h2 svg { color: var(--success); }
+  .pill {
+    font-size: 0.74rem; color: var(--fg-muted);
+    padding: 0.22rem 0.55rem; border: 1px solid var(--border);
+    border-radius: 999px; background: var(--bg-elev-2);
+  }
+  .pill b { color: var(--fg); font-weight: 600; }
+
+  /* CSS-only tabs */
+  .tab-radio { position: absolute; opacity: 0; pointer-events: none; }
+  .tablist { display: flex; gap: 0.25rem; padding: 0.6rem 1.25rem 0; border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 0.5rem 0.85rem; font-size: 0.85rem; font-weight: 550;
+    color: var(--fg-muted); cursor: pointer; border-radius: 7px 7px 0 0;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--fg); }
+  #tab-text:checked ~ .tablist label[for="tab-text"],
+  #tab-segments:checked ~ .tablist label[for="tab-segments"] {
+    color: var(--fg); border-bottom-color: var(--accent);
+  }
+  .tab-radio:focus-visible + .tablist .tab,
+  .tab:focus-within { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .panel { display: none; padding: 1.1rem 1.25rem; }
+  #tab-text:checked ~ .panels .panel-text { display: block; }
+  #tab-segments:checked ~ .panels .panel-segments { display: block; }
+
+  /* Full text panel */
+  .text-toolbar { display: flex; justify-content: flex-end; margin-bottom: 0.6rem; }
+  .copy-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.4rem 0.7rem; font-size: 0.8rem; font-weight: 550;
+    background: var(--bg-elev-2); color: var(--fg-muted);
+    border: 1px solid var(--border); border-radius: 7px; cursor: pointer;
+  }
+  .copy-btn:hover { color: var(--fg); border-color: var(--border-strong); }
+  .copy-btn.copied { color: var(--success); border-color: rgba(111, 207, 151, 0.4); }
+  .fulltext {
+    max-height: 420px; overflow-y: auto;
+    font-size: 0.92rem; line-height: 1.65; color: var(--fg);
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .empty-note { color: var(--fg-faint); font-size: 0.88rem; font-style: italic; }
+
+  /* Segments */
+  .segments { max-height: 420px; overflow-y: auto; }
+  .segment { display: grid; grid-template-columns: auto 1fr; gap: 0.85rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+  .segment:last-child { border-bottom: 0; }
+  .segment .ts { font-family: var(--font-mono); font-size: 0.76rem; color: var(--accent-strong); white-space: nowrap; padding-top: 0.1rem; }
+  .segment .seg-text { font-size: 0.9rem; color: var(--fg); }
+
+  /* Downloads */
+  .downloads { border-top: 1px solid var(--border); padding: 1rem 1.25rem; display: grid; gap: 0.55rem; }
+  .downloads .dl-title { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-faint); }
+  .dl-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; padding: 0.5rem 0.65rem; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+  .dl-row .dl-name { font-family: var(--font-mono); font-size: 0.83rem; color: var(--fg); margin-right: auto; overflow-wrap: anywhere; }
+  .dl-link {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.32rem 0.6rem; font-size: 0.78rem; font-weight: 550;
+    color: var(--fg-muted); text-decoration: none;
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  .dl-link:hover { color: var(--fg); border-color: var(--accent); }
+  .dl-link svg { flex: none; }
+
+  footer { margin-top: 1.5rem; text-align: center; color: var(--fg-faint); font-size: 0.78rem; }
+
+  @media (max-width: 560px) {
+    .options { grid-template-columns: 1fr; }
+    .result-head { padding: 0.9rem 1rem; }
+    .tablist, .panel, .downloads { padding-left: 1rem; padding-right: 1rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, .result { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="masthead">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+        </svg>
+      </span>
+      <h1>Whisperer</h1>
+    </div>
+    <p class="tagline">Transcribe audio &amp; video on your own machine with OpenAI Whisper.</p>
+    <span class="privacy">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      Runs locally — your media never leaves this machine.
+    </span>
+  </header>
+
+  <div class="card">
+    <form id="form" method="post" enctype="multipart/form-data" action="/">
+      <label class="dropzone" id="dropZone" for="fileInput">
+        <span class="dz-icon" aria-hidden="true">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </span>
+        <span class="dz-title">Drop a file here, or <b>browse</b></span>
+        <span class="dz-hint">Audio or video — mp3, wav, m4a, mp4, mkv, mov, webm…</span>
+        <input type="file" name="file" id="fileInput" class="file-input" accept="audio/*,video/*" required>
+      </label>
+
+      <div class="file-chip" id="fileChip">
+        <span class="fc-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </span>
+        <span class="fc-body">
+          <span class="fc-name" id="fileName"></span>
+          <span class="fc-size" id="fileSize"></span>
+        </span>
+        <button type="button" class="fc-remove" id="fileRemove" aria-label="Remove selected file" title="Remove">&times;</button>
+      </div>
+
+      <div class="options">
+        <div class="field">
+          <label for="model">Model</label>
+          <select name="model" id="model">
+            {% for model in models %}
+            <option value="{{ model }}" {% if model == default_model %}selected{% endif %}>{{ model }}</option>
+            {% endfor %}
+          </select>
+          <span class="help">Speed vs. accuracy</span>
+        </div>
+        <div class="field">
+          <label for="language">Language</label>
+          <select name="language" id="language">
+            <option value="">Auto-detect</option>
+            <option value="fr">French</option>
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="de">German</option>
+            <option value="it">Italian</option>
+            <option value="pt">Portuguese</option>
+            <option value="ja">Japanese</option>
+            <option value="zh">Chinese</option>
+          </select>
+          <span class="help">Leave on auto if unsure</span>
+        </div>
+        <div class="field">
+          <label for="format">Format</label>
+          <select name="format" id="format">
+            {% for format in formats %}
+            <option value="{{ format }}" {% if format == default_format %}selected{% endif %}>{{ format }}</option>
+            {% endfor %}
+          </select>
+          <span class="help">Output file type</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Transcribe
+        </button>
+        <a class="btn btn-ghost" href="/">Reset</a>
+        <div class="status" id="status" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Transcribing… this can take a while for large files.</span>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  {% if error %}
+  <div class="alert" role="alert">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <span>{{ error }}</span>
+  </div>
+  {% endif %}
+
+  {% if result %}
+  <section class="result">
+    <div class="result-head">
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Transcription
+      </h2>
+      <span class="pill">Language <b>{{ result.language }}</b></span>
+      <span class="pill">Model <b>{{ result.model }}</b></span>
+      <span class="pill">Format <b>{{ result.format }}</b></span>
+    </div>
+
+    <input type="radio" name="resulttab" id="tab-text" class="tab-radio" checked>
+    <input type="radio" name="resulttab" id="tab-segments" class="tab-radio">
+    <div class="tablist" role="tablist">
+      <label class="tab" for="tab-text" tabindex="0">Full text</label>
+      <label class="tab" for="tab-segments" tabindex="0">Segments ({{ result.segments|length }})</label>
+    </div>
+
+    <div class="panels">
+      <div class="panel panel-text">
+        {% if result.text and result.text.strip() %}
+        <div class="text-toolbar">
+          <button type="button" class="copy-btn" id="copyBtn" data-label="Copy">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <span class="copy-label">Copy</span>
+          </button>
+        </div>
+        <div class="fulltext" id="fullText">{{ result.text.strip() }}</div>
+        {% else %}
+        <p class="empty-note">No text was returned for this transcription.</p>
+        {% endif %}
+      </div>
+
+      <div class="panel panel-segments">
+        {% if result.segments %}
+        <div class="segments">
+          {% for segment in result.segments %}
+          <div class="segment">
+            <div class="ts">{{ segment.start }} &rarr; {{ segment.end }}</div>
+            <div class="seg-text">{{ segment.text }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-note">No timestamped segments for this format.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if result.files %}
+    <div class="downloads">
+      <span class="dl-title">Output files</span>
+      {% for file in result.files %}
+      <div class="dl-row">
+        <span class="dl-name">{{ file }}</span>
+        <a class="dl-link" href="/outputs/{{ file }}" target="_blank" rel="noopener">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          View
+        </a>
+        <a class="dl-link" href="/download/{{ file }}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <footer>Whisperer · local-first transcription</footer>
+</main>
+
+<script>
+  (function () {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileChip = document.getElementById('fileChip');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const fileRemove = document.getElementById('fileRemove');
+    const form = document.getElementById('form');
+    const submitBtn = document.getElementById('submitBtn');
+    const status = document.getElementById('status');
+
+    function formatSize(bytes) {
+      if (!bytes && bytes !== 0) return '';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let value = bytes, unit = 0;
+      while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit++; }
+      return (unit === 0 ? value : value.toFixed(1)) + ' ' + units[unit];
+    }
+
+    function showFile() {
+      const file = fileInput.files && fileInput.files[0];
+      if (file) {
+        fileName.textContent = file.name;
+        fileSize.textContent = formatSize(file.size);
+        fileChip.classList.add('show');
+      } else {
+        fileChip.classList.remove('show');
+      }
+    }
+
+    fileInput.addEventListener('change', showFile);
+
+    fileRemove.addEventListener('click', function () {
+      fileInput.value = '';
+      showFile();
+    });
+
+    // Drag & drop enhancement
+    ['dragenter', 'dragover'].forEach(function (evt) {
+      dropZone.addEventListener(evt, function (e) {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+      });
+    });
+    ['dragleave', 'dragend', 'drop'].forEach(function (evt) {
+      dropZone.addEventListener(evt, function () { dropZone.classList.remove('dragover'); });
+    });
+    dropZone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      if (e.dataTransfer && e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        showFile();
+      }
+    });
+
+    // Loading state
+    form.addEventListener('submit', function () {
+      submitBtn.disabled = true;
+      status.classList.add('show');
+    });
+
+    // Copy full text
+    const copyBtn = document.getElementById('copyBtn');
+    const fullText = document.getElementById('fullText');
+    if (copyBtn && fullText) {
+      copyBtn.addEventListener('click', function () {
+        const text = fullText.textContent;
+        const done = function () {
+          const label = copyBtn.querySelector('.copy-label');
+          copyBtn.classList.add('copied');
+          if (label) label.textContent = 'Copied';
+          setTimeout(function () {
+            copyBtn.classList.remove('copied');
+            if (label) label.textContent = 'Copy';
+          }, 1600);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done).catch(function () { selectFallback(); });
+        } else {
+          selectFallback();
+        }
+        function selectFallback() {
+          const range = document.createRange();
+          range.selectNodeContents(fullText);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          try { document.execCommand('copy'); done(); } catch (e) { /* leave selected */ }
+        }
+      });
+    }
+  })();
+</script>
+</body>
+</html>
